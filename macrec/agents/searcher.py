@@ -3,16 +3,16 @@ from loguru import logger
 from langchain.prompts import PromptTemplate
 
 from macrec.agents.base import ToolAgent
-from macrec.tools import Wikipedia
+from macrec.tools import Wikipedia,web_search
 from macrec.utils import read_json, parse_action, get_rm
-
+from macrec.tools.web_search import WebSearch
 class Searcher(ToolAgent):
     def __init__(self, config_path: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         config = read_json(config_path)
         tool_config: dict[str, dict] = get_rm(config, 'tool_config', {})
         self.get_tools(tool_config)
-        self.max_turns = get_rm(config, 'max_turns', 6)
+        self.max_turns =  1
         self.searcher = self.get_LLM(config=config)
         self.json_mode = self.searcher.json_mode
         self.reset()
@@ -20,7 +20,7 @@ class Searcher(ToolAgent):
     @staticmethod
     def required_tools() -> dict[str, type]:
         return {
-            'retriever': Wikipedia,
+            'retriever': Wikipedia
         }
     
     @property
@@ -58,8 +58,12 @@ class Searcher(ToolAgent):
         )
         
     def _prompt_searcher(self, **kwargs) -> str:
-        searcher_prompt = self._build_searcher_prompt(**kwargs)
-        command = self.searcher(searcher_prompt)
+        if isinstance(self.retriever,WebSearch):
+            searcher_prompt = self._build_searcher_prompt(**kwargs)
+            command=self.searcher()
+        else:
+            searcher_prompt = self._build_searcher_prompt(**kwargs)
+            command = self.searcher(searcher_prompt)
         return command
     
     def command(self, command: str) -> None:
@@ -97,11 +101,16 @@ class Searcher(ToolAgent):
         self._history.append(turn)
         
     def forward(self, requirements: str, *args, **kwargs) -> str:
-        while not self.is_finished():
-            command = self._prompt_searcher(requirements=requirements)
-            self.command(command)
-        if not self.finished:
-            return 'Searcher did not return any result.'
+        if isinstance(self.retriever,WebSearch):
+            logger.debug(requirements)
+            self.results=self.retriever.search(requirements)
+        else:
+            while not self.is_finished():
+                command = self._prompt_searcher(requirements=requirements)
+                self.command(command)
+            if not self.finished:
+                return 'Searcher did not return any result.'
+        logger.debug(self.results)
         return f'Search result: {self.results}'
     
     def invoke(self, argument: Any, json_mode: bool) -> str:

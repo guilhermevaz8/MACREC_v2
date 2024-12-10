@@ -6,8 +6,8 @@
     "manager_thought": "config/agents/manager_thought.json",
     "interpreter": "config/agents/interpreter.json",
     "searchers": [
-        "config/agents/searcher1.json",
-        "config/agents/searcher2.json"
+        "config/agents/searcher2.json",
+        "config/agents/searcher1.json"
     ],
     "agent_prompt": "config/prompts/old_system_prompt/react_chat.json",
     "data_prompt": "config/prompts/data_prompt/{task}.json",

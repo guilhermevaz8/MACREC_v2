@@ -1,5 +1,6 @@
 {
     "top_k": 5,
-    "max_doc_length": 1000,
+    "max_doc_length": 100,
     "language": "en"
 }
+

@@ -6,7 +6,7 @@
     "json_mode": true,
     "tool_config": {
         "retriever": {
-            "type": "wikipedia",
+            "type": "web_search",
             "config_path": "config/tools/wikipedia1.json"
         }
     }

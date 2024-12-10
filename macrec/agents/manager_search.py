@@ -7,6 +7,8 @@ from transformers import AutoTokenizer
 from langchain.prompts import PromptTemplate
 from macrec.agents.base import Agent
 from macrec.llms import AnyOpenAILLM
+import re
+import json
 
 class SearchManager(Agent):
     """
@@ -40,24 +42,29 @@ class SearchManager(Agent):
         proposals = [searcher.invoke(query,json_mode=True) for searcher in self.searchers]
         logger.debug(f"Propostas recebidas: {proposals}")
 
-        evaluations = [self.evaluate_proposal(proposal) for proposal in proposals]
+        evaluations = [self.evaluate_proposal(proposal,query) for proposal in proposals]
         logger.debug(f"Avaliações recebidas: {evaluations}")
 
         negotiated_result = self.negotiate_results(proposals, evaluations)
         return negotiated_result
 
-    def evaluate_proposal(self, proposal: str) -> float:
-        prompt = self._build_manager_prompt(
-            examples="",
-            query=f"Avalie esta proposta: {proposal}. Retorne um score de 0 a 10."
-        )
+    def evaluate_proposal(self, proposal: str,query: str) -> float:
         response = self.client.chat.completions.create(
             model="meta-llama/Llama-3.2-1B-Instruct",
             messages=[
-                {"role": "system", "content": "Você é um avaliador imparcial."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": """Você é um avaliador imparcial. Vai analisar o quão adequado é o contexto fornecido para responder à pergunta associada. A avaliação será baseada na relevância, cobertura e utilidade do contexto em relação à pergunta. A pontuação deve variar entre 0 (completamente inadequado) e 10 (perfeitamente adequado). Devolva sempre e apenas um JSON no formato do exemplo abaixo, sem nenhuma explicação adicional.
+
+Exemplo de entrada:
+Contexto:
+"Os algoritmos de aprendizado supervisionado, como regressão linear e árvores de decisão, são amplamente usados para resolver problemas de previsão."
+Pergunta:
+"Quais algoritmos são mais eficientes para problemas de classificação?"
+
+Resposta esperada:
+{"Score": 7.0}"""},
+                {"role": "user", "content":f"Agora analise o seguinte contexto e pergunta. Contexto:{proposal}\n pergunta:{query}. "}
             ],
-            max_tokens=50
+            max_tokens=20
         )
         evaluation_message = response.choices[0].message['content']
         score = self.extract_score_from_evaluation(evaluation_message)
@@ -66,8 +73,15 @@ class SearchManager(Agent):
 
     def extract_score_from_evaluation(self, evaluation_message: str) -> float:
         try:
-            score = float(evaluation_message.split("Score:")[1].strip())
-        except Exception:
+            logger.debug(evaluation_message)
+            evaluation_message=re.sub(r"^```|```$", "", evaluation_message.strip(), flags=re.MULTILINE)
+            data_dict = json.loads(evaluation_message)
+            for key in data_dict.keys():
+                score=data_dict[key]
+            logger.debug(data_dict)
+            # Extrair o valor de 'score'
+        except Exception as e:
+            logger.debug(e)
             logger.warning(f"Falha ao extrair score de: {evaluation_message}")
             score = 0.0
         return score
