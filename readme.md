@@ -1,4 +1,4 @@
-## MACRec: a Multi-Agent Collaboration Framework for Recommendation
+## MACRec: a Multi-Agent Collaboration Framework for Recommendation usin Contract Net Protocol with an LLM Evaluation
 
 This repository contains an unofficial implementation of our SIGIR 2024 demo paper:
 - [Wang, Zhefan, Yuanqing Yu, et al. "MACRec: A Multi-Agent Collaboration Framework for Recommendation". SIGIR 2024.](https://dl.acm.org/doi/abs/10.1145/3626772.3657669)
