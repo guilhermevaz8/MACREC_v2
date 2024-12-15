@@ -5,7 +5,7 @@ from macrec.tools.base import RetrievalTool
 class WebSearch(RetrievalTool):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.api_key: str = self.config.get('api_key', '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')
+        self.api_key: str = self.config.get('api_key', 'KEY')
         self.top_k: int = self.config.get('top_k', 3)
         self.tavily_client = TavilyClient(api_key=self.api_key)
         self.cache = {}
