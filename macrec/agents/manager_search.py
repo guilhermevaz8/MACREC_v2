@@ -28,7 +28,7 @@ class SearchManager(Agent):
         self.config = config
         # self.agent_kwargs=agent_kwargs
         self.searchers=searcher 
-        self.client = InferenceClient(base_url="https://api-inference.huggingface.co/v1/", api_key="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")
+        self.client = InferenceClient(base_url="https://api-inference.huggingface.co/v1/", api_key="KEY")
 
 
     def forward(self, query: str) -> str:
